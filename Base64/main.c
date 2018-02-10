@@ -1,11 +1,11 @@
-/*								лсгеи йнкунгнб
+/*                         лсгеи йнкунгнб (KOLHOZ MUSEUM)
 ||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
-||	bites = (input[in] << 16) + (input[in+1] << 8) + input[in+2];				||
-||	printf("bites %d", bites);													||
-||	for (i = 0; i < 4; i++) {													||
-||		output[out++] = base64[((bites & (63 << (6 * (3 - i)))) >> (6* (3-i)))];||
-||		printf("  \n%d", ((bites & (63 << (6 * (3 - i)))) >> (6 * (3 - i))));	||
-||  }																			||
+||  bites = (input[in] << 16) + (input[in+1] << 8) + input[in+2];               ||
+||  printf("bites %d", bites);                                                  ||
+||  for (i = 0; i < 4; i++) {                                                   ||
+||      output[out++] = base64[((bites & (63 << (6 * (3 - i)))) >> (6* (3-i)))];||
+||      printf("  \n%d", ((bites & (63 << (6 * (3 - i)))) >> (6 * (3 - i))));   ||
+||  }                                                                           ||
 ||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
 
 */
@@ -15,6 +15,13 @@
 #include <string.h>
 
 unsigned char base64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+
+/*
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+||                  GET INDEX OF ELEMENT IN BASE 64 FORMAT                      ||
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+*/
 
 char getIndex(char c) {
 	char i;
@@ -26,11 +33,19 @@ char getIndex(char c) {
 	return -1;
 }
 
+
+/*
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+||          PREPARE STRING FOR DECODING (WORKS WITH FLAG "-i" ONLY)             ||
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+*/
+
 int clear(char* input, size_t inputlen) {
-	size_t i, j, c = 0;
-	char n = 0;;
+	size_t i,
+		c = 0;
+	char n = 0;
 	for (i = 0; i < inputlen; i++) {
-		if (j=getIndex(input[i])+1) {
+		if (getIndex(input[i])+1) {
 			input[i - c] = input[i];
 			continue;
 		}else{
@@ -40,6 +55,11 @@ int clear(char* input, size_t inputlen) {
 	return inputlen-c;
 }
 
+/*
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+||                        ENCODING TO BASE64 FROM ASCII                         ||
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+*/
 char* encode(char *input, size_t inputlen, size_t outlen) {
 	char *output = (char*)malloc(outlen);
 	int out = 0,
@@ -79,10 +99,16 @@ char* encode(char *input, size_t inputlen, size_t outlen) {
 		output[out++] = '=';
 		output[out++] = '=';
 	}
-	output[out] = EOF;
+
 	return output;
 }
 
+
+/*
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+||                      DECODING FROM BASE64 TO ASCII                           ||
+||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||==||
+*/
 char* decode(char* input, size_t inputlen, size_t outlen) {
 	char *output = (char*)malloc(outlen);
 	unsigned char enc1, enc2, enc3, enc4;
@@ -115,10 +141,10 @@ char* decode(char* input, size_t inputlen, size_t outlen) {
 
 	}
 
-	output[out] = EOF;
-
 	return output;
 }
+
+
 int main(int argc, char** argv) {
 	char *input, *output = "\0", *flag, *inf, *outf;
 	size_t os, bs;
@@ -129,36 +155,47 @@ int main(int argc, char** argv) {
 	outf = argv[3];
 
 	if (in = fopen(inf, "rb")) {
+
 		fseek(in, 0, SEEK_END);
 		bs = ftell(in);
-		printf("%zu", bs);
 		input = (char*)malloc(bs);
 		fseek(in, 0, SEEK_SET);
-		printf("\n%d %d", fread(input, sizeof(char), bs, in), ferror(in));
+		fread(input, sizeof(char), bs, in);
 		fclose(in);
+
 	}
 	else {
 		printf("Input valid filename");
 		return 0;
 	}
-	
+
+
+
 	if (!strcmp(flag,"-e")) {
+
 		os = (bs + ((bs%3 == 2) ? 1 : (2 * bs%3))) * (4.0 / 3);
 		output = encode(input,bs,os);		
+
 	}
 	else if (!strcmp(flag, "-d")) {
+
 		os = bs * (3.0 / 4) - ((input[bs-1] == '=') ? ((input[bs - 2] == '=') ? 2 : 1) : 0);
 		output = decode(input,bs,os);
+
 	}
 	else if (!strcmp(flag, "-i")) {
+
 		bs = clear(input,bs);
 		os = bs * (3.0 / 4) - ((input[bs - 1] == '=') ? ((input[bs - 2] == '=') ? 2 : 1) : 0);
 		output = decode(input, bs, os);
+
 	}
 
 	out = fopen(outf, "wb");
 	fwrite(output, sizeof(char),os,out);
 	fclose(out);
+
+
 
 
 	return 0;
