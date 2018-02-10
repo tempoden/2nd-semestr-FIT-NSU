@@ -26,8 +26,8 @@ char getIndex(char c) {
 	return -1;
 }
 
-char* encode(char *input, size_t inputlen) {
-	char *output = (char*)malloc((size_t)(1.4*inputlen) * sizeof(char));
+char* encode(char *input, size_t inputlen, size_t outlen) {
+	char *output = (char*)malloc(outlen);
 	int out = 0,
 		in = 0;
 	unsigned char chr1, chr2, chr3;
@@ -68,8 +68,8 @@ char* encode(char *input, size_t inputlen) {
 	output[out] = EOF;
 	return output;
 }
-char* decode(char* input, size_t inputlen) {
-	char *output = (char*)malloc((size_t)(0.8*inputlen) * sizeof(char));
+char* decode(char* input, size_t inputlen, size_t outlen) {
+	char *output = (char*)malloc(outlen);
 	unsigned char enc1, enc2, enc3, enc4;
 
 	int in = 0,
@@ -113,22 +113,27 @@ int main(int argc, char** argv) {
 	inf = argv[2];
 	outf = argv[3];
 
-	in = fopen(inf, "r");
-	fseek(in, 0, SEEK_END);
-	bs = ftell(in);
-	printf("%zu", bs);
-	input = (char*)malloc(bs);
-	fseek(in, 0, SEEK_SET);
-	printf("\n%d",fread(input, 1, bs, in));
-	fclose(in);
-
+	if (in = fopen(inf, "rb")) {
+		fseek(in, 0, SEEK_END);
+		bs = ftell(in);
+		printf("%zu", bs);
+		input = (char*)malloc(bs);
+		fseek(in, 0, SEEK_SET);
+		printf("\n%d %d", fread(input, sizeof(char), bs, in), ferror(in));
+		fclose(in);
+	}
+	else {
+		printf("Input valid filename");
+		return 0;
+	}
+	
 	if (strcmp(flag,"-e") == 0) {
-		output = encode(input,bs);
-		os = bs * (4.0 / 3) + bs % 3;
+		os = (bs + ((bs%3 == 2) ? 1 : (2 * bs%3))) * (4.0 / 3);
+		output = encode(input,bs,os);		
 	}
 	else if (strcmp(flag, "-d") == 0) {
-		output = decode(input,bs);
-		os = bs * (3.0 / 4);
+		os = bs * (3.0 / 4) - ((input[bs-1] == '=') ? ((input[bs - 2] == '=') ? 2 : 1) : 0);
+		output = decode(input,bs,os);
 	}
 
 	out = fopen(outf, "wb");
