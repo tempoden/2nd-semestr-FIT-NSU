@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-unsigned char base64[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+unsigned char base64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
 char getIndex(char c) {
 	char i;
@@ -24,6 +24,20 @@ char getIndex(char c) {
 		}
 	}
 	return -1;
+}
+
+int clear(char* input, size_t inputlen) {
+	size_t i, j, c = 0;
+	char n = 0;;
+	for (i = 0; i < inputlen; i++) {
+		if (j=getIndex(input[i])+1) {
+			input[i - c] = input[i];
+			continue;
+		}else{
+			c++;
+		}
+	}
+	return inputlen-c;
 }
 
 char* encode(char *input, size_t inputlen, size_t outlen) {
@@ -68,6 +82,7 @@ char* encode(char *input, size_t inputlen, size_t outlen) {
 	output[out] = EOF;
 	return output;
 }
+
 char* decode(char* input, size_t inputlen, size_t outlen) {
 	char *output = (char*)malloc(outlen);
 	unsigned char enc1, enc2, enc3, enc4;
@@ -127,20 +142,24 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 	
-	if (strcmp(flag,"-e") == 0) {
+	if (!strcmp(flag,"-e")) {
 		os = (bs + ((bs%3 == 2) ? 1 : (2 * bs%3))) * (4.0 / 3);
 		output = encode(input,bs,os);		
 	}
-	else if (strcmp(flag, "-d") == 0) {
+	else if (!strcmp(flag, "-d")) {
 		os = bs * (3.0 / 4) - ((input[bs-1] == '=') ? ((input[bs - 2] == '=') ? 2 : 1) : 0);
 		output = decode(input,bs,os);
+	}
+	else if (!strcmp(flag, "-i")) {
+		bs = clear(input,bs);
+		os = bs * (3.0 / 4) - ((input[bs - 1] == '=') ? ((input[bs - 2] == '=') ? 2 : 1) : 0);
+		output = decode(input, bs, os);
 	}
 
 	out = fopen(outf, "wb");
 	fwrite(output, sizeof(char),os,out);
 	fclose(out);
 
-	/*free(input);
-	free(output);*/
+
 	return 0;
 }
